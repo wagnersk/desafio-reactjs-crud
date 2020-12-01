@@ -38,9 +38,10 @@ const Dashboard: React.FC = () => {
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
     try {
-      const foodWithAvailable = Object.assign(food, { available: true });
-
-      const response = await api.post('/foods', foodWithAvailable);
+      const response = await api.post('/foods', {
+        ...food,
+        available: true,
+      });
 
       setFoods([...foods, response.data]);
     } catch (err) {
@@ -51,19 +52,30 @@ const Dashboard: React.FC = () => {
   async function handleUpdateFood(
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
-    const meuArraySemOSelecionado = foods.filter(f => f.id !== editingFood.id);
+    try {
+      const response = await api.put(`/foods/${editingFood.id}`, {
+        ...editingFood,
+        ...food,
+      });
 
-    const { id, available } = editingFood;
-
-    const novoFoodComIDeAvailable = Object.assign(food, { id, available });
-
-    setFoods([...meuArraySemOSelecionado, novoFoodComIDeAvailable]);
+      setFoods(
+        foods.map(mappedFood =>
+          mappedFood.id === editingFood.id ? { ...response.data } : mappedFood,
+        ),
+      );
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   async function handleDeleteFood(id: number): Promise<void> {
-    const meuArraySemOSelecionado = foods.filter(f => f.id !== id);
+    try {
+      await api.delete(`/foods/${id}`);
 
-    setFoods(meuArraySemOSelecionado);
+      setFoods(foods.filter(f => f.id !== id));
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   function toggleModal(): void {
@@ -75,7 +87,7 @@ const Dashboard: React.FC = () => {
   }
 
   function handleEditFood(food: IFoodPlate): void {
-    setEditModalOpen(true);
+    toggleEditModal();
 
     setEditingFood(food);
   }
